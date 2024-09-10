@@ -1,5 +1,5 @@
 CFLAGS=-std=c11 -g -static
-9cc: 9cc.c parse.c
+9cc: 9cc.c parse.c error.c
 
 test: 9cc
 	./test.sh

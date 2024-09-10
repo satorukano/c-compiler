@@ -1,8 +1,8 @@
-#ifndef PARSE_H
-#define PARSE_H
+#ifndef CC_H
+#define CC_H
 
 
-// Token and TokenKind definitions
+// Struct definitions
 typedef enum {
     TK_RESERVED,
     TK_NUM,
@@ -18,7 +18,6 @@ struct Token {
     char *str;
 };
 
-// Node and NodeKind definitions
 typedef enum {
     ND_ADD,
     ND_SUB,
@@ -64,6 +63,8 @@ Node *mul();
 Node *expr();
 
 Node *primary();
+
+Node *unary();
 
 void gen(Node *node);
 
