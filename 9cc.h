@@ -16,6 +16,7 @@ struct Token {
     Token *next;
     int val;
     char *str;
+    int len;
 };
 
 typedef enum {
@@ -23,7 +24,11 @@ typedef enum {
     ND_SUB,
     ND_MUL,
     ND_DIV,
-    ND_NUM,
+    ND_EQ,
+    ND_NE,
+    ND_LT,
+    ND_LE,
+    ND_NUM
 } NodeKind;
 
 typedef struct Node Node;
@@ -42,15 +47,15 @@ extern char *user_input;
 // Function declarations
 void error_at(char *loc, char *fmt, ...);
 
-bool consume(char op);
+bool consume(char *op);
 
 int expect_number();
 
-void expect(char op);
+void expect(char *op);
 
 bool at_eof();
 
-Token *new_token(TokenKind kind, Token *cur, char *str);
+Token *new_token(TokenKind kind, Token *cur, char *str, int str_length);
 
 Token *tokenize(char *p);
 
@@ -63,6 +68,12 @@ Node *mul();
 Node *expr();
 
 Node *primary();
+
+Node *equality();
+
+Node *relational();
+
+Node *add();
 
 Node *unary();
 
