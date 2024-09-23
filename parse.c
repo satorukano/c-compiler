@@ -8,6 +8,8 @@
 
 Token *token;
 
+Node *code[100];
+
 bool consume(char *op)
 {
     if (token->kind != TK_RESERVED ||
@@ -18,6 +20,12 @@ bool consume(char *op)
     }
     token = token->next;
     return true;
+}
+bool consume_ident() {
+    if (token->kind == TK_IDENT) {
+        return token;
+    }
+    return NULL;
 }
 
 int expect_number()
@@ -69,6 +77,11 @@ Token *tokenize(char *p)
             continue;
         }
 
+        if ('a' <= *p && *p <= 'z') {
+            cur = new_token(TK_IDENT, cur, p++, 1);
+            continue;
+        }
+
 
         if (strncmp(p, "==", 2) == 0 ||
             strncmp(p, "!=", 2) == 0||
@@ -80,7 +93,7 @@ Token *tokenize(char *p)
             continue;
         }
 
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '<' || *p == '>')
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '<' || *p == '>' || *p == ';' || *p == '=')
         {
             cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;
@@ -117,6 +130,29 @@ Node *new_node_num(int val)
     return node;
 }
 
+void program() {
+    int i = 0;
+    while(!at_eof()) {
+        code[i++] = stmt();
+    }
+    code[i] = NULL;
+}
+
+Node *stmt() {
+    Node *node = expr();
+    expect(";");
+    return node;
+}
+
+Node *assign() {
+    Node *node = equality();
+    if (consume("=")) {
+        node = new_node(ND_ASSIGN, node, assign());
+    }
+    return node;
+}
+
+
 Node *mul()
 {
     Node *node = unary();
@@ -140,8 +176,7 @@ Node *mul()
 
 Node *expr()
 {
-    Node *node = equality();
-    return node;
+    return assign();
 }
 
 Node *equality()
@@ -219,6 +254,15 @@ Node *primary()
         expect(")");
         return node;
     }
+
+
+    if (consume_ident()) {
+        Node *node = calloc(1, sizeof(Node));
+        node->kind = ND_LVAR;
+        node->offset = (token->str[0] - 'a' + 1) * 8;
+        token = token->next;
+        return node;
+    }
     return new_node_num(expect_number());
 }
 
@@ -235,54 +279,3 @@ Node *unary()
     return primary();
 }
 
-void gen(Node *node)
-{
-    if (node->kind == ND_NUM)
-    {
-        printf(" push %d\n", node->val);
-        return;
-    }
-
-    gen(node->lhs);
-    gen(node->rhs);
-
-    printf(" pop rdi\n");
-    printf(" pop rax\n");
-
-    switch (node->kind)
-    {
-    case ND_ADD:
-        printf(" add rax, rdi\n");
-        break;
-    case ND_SUB:
-        printf(" sub rax, rdi\n");
-        break;
-    case ND_MUL:
-        printf(" imul rax, rdi\n");
-        break;
-    case ND_DIV:
-        printf(" cqo\n");
-        printf(" idiv rdi\n");
-        break;
-    case ND_EQ:
-        printf(" cmp rax, rdi \n");
-        printf(" sete al \n");
-        printf(" movzb rax, al\n");
-        break;
-    case ND_NE:
-        printf(" cmp rax, rdi\n");
-        printf(" setne al\n");
-        printf(" movzb rax, al\n");
-        break;
-    case ND_LE:
-        printf(" cmp rax, rdi\n");
-        printf(" setle al\n");
-        printf(" movzb rax, al\n");
-    case ND_LT:
-        printf(" cmp rax, rdi\n");
-        printf(" setl al\n");
-        printf(" movzb rax, al\n");
-    }
-
-    printf(" push rax\n");
-}
